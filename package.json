@@ -2,9 +2,17 @@
   "name": "blockcrypt",
   "version": "0.0.1-beta.21",
   "description": "Encrypt one or more secrets with plausible deniability by design.",
-  "main": "dist/index.js",
+  "exports": "./dist/src/index.js",
+  "type": "module",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "dist/src/*"
+      ]
+    }
+  },
   "files": [
-    "dist/",
+    "dist/src/",
     "package.json",
     "LICENCE",
     "README.md"
@@ -18,7 +26,7 @@
   "scripts": {
     "code": "tsc -w",
     "build": "rm -fr dist/*; tsc",
-    "test": "jest dist/test.js",
+    "test": "npm run build && NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest",
     "prepublishOnly": "npm run build",
     "ncu": "ncu --target minor --upgrade"
   },
@@ -41,5 +49,8 @@
     "semi": false,
     "tabWidth": 2,
     "trailingComma": "es5"
+  },
+  "browser": {
+    "crypto": false
   }
 }

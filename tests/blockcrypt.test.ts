@@ -1,5 +1,6 @@
 import { createHmac } from "crypto"
-import { encrypt, decrypt, getDataLength, Secret } from "./index"
+import { encrypt, decrypt, getDataLength, Secret } from "../src"
+import { toHexString } from "../src/util"
 
 const secrets: Secret[] = [
   {
@@ -21,9 +22,9 @@ const insecureKdf = async (
   passphrase: string,
   salt: string
 ): Promise<Buffer> => {
-  const hmac = createHmac("sha256", salt)
+  const hmac = createHmac("sha256", Buffer.from(salt, "hex").toString("base64"))
   const data = hmac.update(passphrase)
-  return Buffer.from(data.digest("base64"), "base64")
+  return data.digest()
 }
 
 const referenceSalt = Buffer.from("Com4/aFtBjaGdvbjgi5UNw==", "base64")
@@ -47,8 +48,8 @@ test("confirms block matches reference", async () => {
   const block = await encrypt(
     secrets,
     insecureKdf,
-    null,
-    null,
+    undefined,
+    undefined,
     referenceSalt,
     referenceIv
   )
@@ -105,7 +106,7 @@ test("fails to encrypt secrets using default headers length that is to short for
   expect.assertions(1)
   try {
     await encrypt(
-      [].concat(
+      [
         ...secrets,
         {
           message: "foo",
@@ -114,8 +115,8 @@ test("fails to encrypt secrets using default headers length that is to short for
         {
           message: "bar",
           passphrase: "lurk entry clip tidal cinch",
-        }
-      ),
+        },
+      ],
       insecureKdf
     )
   } catch (error) {
@@ -134,7 +135,7 @@ test("fails to encrypt secret 1 using invalid data length", async () => {
   try {
     const secret1 = secrets[0]
     const dataLength = getDataLength(secret1.message)
-    await encrypt([secret1], insecureKdf, null, dataLength - 1)
+    await encrypt([secret1], insecureKdf, undefined, dataLength - 1)
   } catch (error) {
     expect(error.message).toEqual("Invalid data length")
   }
@@ -154,7 +155,7 @@ test("fails to encrypt secret 1 using minimum required data length minus 8", asy
 test("fails to encrypt secrets using data length that is to short for data", async () => {
   expect.assertions(1)
   try {
-    await encrypt(secrets, insecureKdf, null, 256)
+    await encrypt(secrets, insecureKdf, undefined, 256)
   } catch (error) {
     expect(error.message).toEqual("Data too long for data length")
   }
@@ -164,7 +165,7 @@ test("fails to encrypt secrets using auto data length that is to short for data"
   expect.assertions(1)
   try {
     await encrypt(
-      [].concat(
+      [
         ...secrets,
         {
           message:
@@ -175,8 +176,8 @@ test("fails to encrypt secrets using auto data length that is to short for data"
           message:
             "leaf spawn guitar immune diagram height flag once giant tell pepper sugar sphere stomach coach erase fatigue lens tunnel love range flight embark control",
           passphrase: "mate cedar brook flop snowy",
-        }
-      ),
+        },
+      ],
       insecureKdf
     )
   } catch (error) {
@@ -187,13 +188,13 @@ test("fails to encrypt secrets using auto data length that is to short for data"
 test("encrypts secret 1 using minimum required data length", async () => {
   const secret1 = secrets[0]
   const dataLength = getDataLength(secret1.message)
-  const block = await encrypt([secret1], insecureKdf, null, dataLength)
+  const block = await encrypt([secret1], insecureKdf, undefined, dataLength)
   expect(block).toBeDefined()
 })
 
 test("encrypts secrets using unusual but valid data length", async () => {
   const dataLength = 1016
-  const block = await encrypt(secrets, insecureKdf, null, dataLength)
+  const block = await encrypt(secrets, insecureKdf, undefined, dataLength)
   expect(block.data.length).toEqual(dataLength)
 })
 
